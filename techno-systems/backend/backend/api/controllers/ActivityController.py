@@ -94,7 +94,7 @@ class ActivityController(viewsets.GenericViewSet,
     )
         
     def pdf_to_images(pdf_path, output_folder, activity_criteria_list):
-        doc = fitz.open('D:\\SOFTWARE ENGINEERING\\techno-systems-main\\techno-systems\\backend\\backend\\' + pdf_path)
+        doc = fitz.open('C:\\Users\\Kyle Canonigo\\React\\final_technosystems\\techno-systems-main\\techno-systems\\backend\\backend\\' + pdf_path)
         #print(f"There are {doc.page_count} Pages")
         for i in range(doc.page_count):
             page = doc.load_page(i)
@@ -457,7 +457,7 @@ class TeamActivitiesController(viewsets.GenericViewSet,
             
             for attachment_data in serializer.data:
                 file_attachment = attachment_data['file_attachment']
-                response_text = ActivityController.pdf_to_images(file_attachment, 'D:\\SOFTWARE ENGINEERING\\techno-systems-main\\techno-systems\\backend\\backend\\activity_work_submissions', activity_criteria_list)
+                response_text = ActivityController.pdf_to_images(file_attachment, 'C:\\Users\\Kyle Canonigo\\React\\final_technosystems\\techno-systems-main\\techno-systems\\backend\\backend\\activity_work_submissions', activity_criteria_list)
                 # print(response_text)
                 data = ActivityController.parse_json_string_to_list(response_text)
                 

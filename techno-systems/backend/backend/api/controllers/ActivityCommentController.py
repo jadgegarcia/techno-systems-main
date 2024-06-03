@@ -98,7 +98,7 @@ class ActivityCommentController(viewsets.GenericViewSet,
                 activity = Activity.objects.get(pk=activity_id)
                 comments = ActivityComment.objects.filter(activity_id=activity)
 
-                comments[0].comment = self.extract_feedback(comments[0].comment)
+                # comments[0].comment = self.extract_feedback(comments[0].comment)
 
                 #print(edited)
                 serializer = ActivityCommentWithUserSerializer(comments, many=True)

@@ -25,11 +25,28 @@ const ViewActivityStudent = () => {
   const [submitted, setSubmitted] = useState(null);
 
 
+  
     // -------------------- START CRITERIA ------------------------------
     const [activityCriteriaOptions, setActivityCriteriaOptions] = useState([]);
     const { getActivityCriteriaById } = useActivityCriteria(activityId);
     const [activityCriteriaNames, setActivityCriteriaNames] = useState([]);
   // -------------------- END CRITERIA ------------------------------
+
+  console.log("HEREEEEE:");
+
+  
+
+  activityComments.forEach(commentNi => {
+    // Extract the value associated with the key 'overall_feedback'
+    const overallFeedbackMatch = commentNi.comment.match(/'Overall Feedback': '([^']+)'/);
+    
+    // Check if the match was found
+    if (overallFeedbackMatch && overallFeedbackMatch[1]) {
+        console.log(overallFeedbackMatch[1]);
+    } else {
+        console.log("No overall_feedback found in the comment.");
+    }
+  });
 
   useEffect(() => {
     if (activity) {
@@ -302,10 +319,10 @@ const ViewActivityStudent = () => {
                 <div className="b-0 m-3">
                   <div className="d-flex flex-row gap-2">
                     <div className="fw-bold activity-primary">
-                      {_comment.user.first_name} {_comment.user.last_name}:
+                      Feedback
                     </div>
                   </div>
-                  {_comment.comment}
+                  {_comment.comment.match(/'Overall Feedback': '([^']+)'/)?.[1]}
                 </div>
               </div>
             ))
