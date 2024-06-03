@@ -6,6 +6,7 @@ import { FiChevronLeft } from 'react-icons/fi';
 import { useNavigate, useOutletContext, useParams } from 'react-router-dom';
 import { useActivity, useTeams, useActivityTemplate } from '../../../../hooks';
 import { UpdateTemplatePopup } from '../../../../components/modals/teacher_views';
+import useActivityCriteria from '../../../../hooks/useActivityCriteria';
 
 const ViewTemplate = () => {
   const navigate = useNavigate();
@@ -13,6 +14,16 @@ const ViewTemplate = () => {
   const { teams } = useTeams(classId);
   const { templateId } = useParams();
   const { template, deleteTemplate } = useActivityTemplate(templateId);
+
+  // -------------------------START CRITERIA---------------------------------- //
+
+  const { activityCriterias } = useActivityCriteria();
+  const [selectedActivityCriterias, setSelectedActivityCriterias] = useState([]);
+  const [activityCriteriaOptions, setActivityCriteriaOptions] = useState([]);
+
+  // -------------------------END CRITERIA---------------------------------- //
+
+
 
   const [showModal, setShowModal] = useState(false);
   const handleShowModal = () => setShowModal(true);
@@ -101,6 +112,27 @@ const ViewTemplate = () => {
     }));
   };
 
+  const handleActivityCriteriaChange = (selectedOptions) => {
+    let _selectedActivityCriterias;
+    if (selectedOptions.some((option) => option.value === 'all')) {
+      _selectedActivityCriterias = activityCriteriaOptions
+        .filter((option) => option.value !== 'all')
+        .map((option) => option.value);
+    } else {
+      _selectedActivityCriterias = selectedOptions.map((option) => option.value);
+    }
+
+    setSelectedActivityCriterias(_selectedActivityCriterias.value);
+
+    console.log("outside: " + _selectedActivityCriterias);
+
+    // Update activityData with the selected teams
+    setActivityData((prevState) => ({
+      ...prevState,
+      activityCriteria_id: _selectedActivityCriterias,
+    }));
+  };
+
   useEffect(() => {
     if (template) {
       setTemplateData({
@@ -109,13 +141,25 @@ const ViewTemplate = () => {
         description: template.description,
       });
 
+
+      
+
       setActivityData((prevState) => ({
         ...prevState,
         template_id: template.id,
         class_id: classId,
       }));
     }
-  }, [template]);
+
+
+    if (activityCriterias) {
+      console.log("Found");
+      const options = activityCriterias.map((activityCriterias) => ({ value: activityCriterias.id, label: activityCriterias.name }));
+      options.unshift({ value: 'all', label: 'select all' });
+      console.log("activity options: ", options);
+      setActivityCriteriaOptions(options);
+    }
+  }, [template, activityCriterias]);
 
   useEffect(() => {
     if (teams) {
@@ -207,6 +251,28 @@ const ViewTemplate = () => {
             />
           </div>
           {/* date */}
+
+          {/* -------------------------START CRITERIA---------------------------------- */}
+          {/* team */}
+          <div className="mb-3">
+            <label htmlFor="team_id" className="form-label">
+              Criteria
+            </label>
+            <Select
+              className="form-control"
+              isMulti
+              required
+              id="description"
+              name="description"
+              defaultValue={selectedActivityCriterias}
+              options={activityCriteriaOptions}
+              onChange={handleActivityCriteriaChange}
+            />
+          </div>
+          {/* -------------------------END CRITERIA---------------------------------- */}
+
+
+
           <div className="mb-3">
             <label htmlFor="due_date" className="form-label">
               Due Date

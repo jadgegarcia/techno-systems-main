@@ -14,6 +14,10 @@ from api.models import ActivityTemplate
 from api.models import ClassRoom
 from api.models import Team
 from api.models import ActivityWorkAttachment
+from api.models import ActivityCriteria
+from api.models import ActivityComment
+from api.models import ClassMember
+from api.models import User
 
 from api.serializers import ActivityWorkAttachmentSerializer
 from api.serializers import ActivitySerializer
@@ -21,6 +25,26 @@ from api.serializers import ActivityTemplateSerializer
 from api.serializers import ActivityCreateFromTemplateSerializer
 from api.serializers import ClassRoomSerializer
 from api.serializers import TeamSerializer
+from api.serializers import CriteriaSerializer
+
+
+
+import fitz
+import os
+import textwrap
+from PIL import Image
+import re
+
+import os
+import textwrap
+import fitz
+from datetime import timedelta, datetime
+
+from IPython.core.display import Markdown
+from PIL import Image
+import google.generativeai as genai
+
+import json
 
 class ActivityController(viewsets.GenericViewSet,
                       mixins.CreateModelMixin,
@@ -30,7 +54,138 @@ class ActivityController(viewsets.GenericViewSet,
     queryset = Activity.objects.all()
     serializer_class = ActivitySerializer
     authentication_classes = [JWTAuthentication]
+    
+    API_KEY = "AIzaSyDVpe2ReNwXgyBDO7CPRGfZpeUrxpBcMOQ"
+    genai.configure(api_key=API_KEY)
+    print(API_KEY)
+    
+    generation_config = {
+        "temperature": 1,
+        "top_p": 0.95,
+        "top_k": 64,
+        "max_output_tokens": 8192,
+        "response_mime_type": "text/plain",
+    }
+    
+    safety_settings = [
+    {
+        "category": "HARM_CATEGORY_HARASSMENT",
+        "threshold": "BLOCK_MEDIUM_AND_ABOVE",
+    },
+    {
+        "category": "HARM_CATEGORY_HATE_SPEECH",
+        "threshold": "BLOCK_MEDIUM_AND_ABOVE",
+    },
+    {
+        "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+        "threshold": "BLOCK_MEDIUM_AND_ABOVE",
+    },
+    {
+        "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+        "threshold": "BLOCK_MEDIUM_AND_ABOVE",
+    },
+    ]
 
+    model = genai.GenerativeModel(
+        model_name="gemini-1.5-pro-latest",
+        #model_name="gemini-1.5-flash",
+        safety_settings=safety_settings,
+        generation_config=generation_config,
+    )
+        
+    def pdf_to_images(pdf_path, output_folder, activity_criteria_list):
+        doc = fitz.open('D:\\SOFTWARE ENGINEERING\\techno-systems-main\\techno-systems\\backend\\backend\\' + pdf_path)
+        #print(f"There are {doc.page_count} Pages")
+        for i in range(doc.page_count):
+            page = doc.load_page(i)
+            pix = page.get_pixmap()
+            image_path = f"{output_folder}/page_{i + 1}.png"
+            pix.save(image_path)
+            #print(f"Page {i + 1} converted to image: {image_path}")
+        
+        img_list = ActivityController.get_images(doc.page_count, output_folder, activity_criteria_list)
+        print("Image List:", img_list)
+        
+        response = ActivityController.model.generate_content(img_list, stream=True)
+        response.resolve()
+        
+        if response is None:
+            print("EMMMMMMMMMMPPPPPPPPPPPPTTTTTTTTTTTTTyyyyyyyyyyy")
+
+        print(response.text)
+        ActivityController.delete_files(doc.page_count, output_folder)
+        doc.close()
+        
+        return response.text
+    
+    
+    
+    def parse_json_string_to_list(json_string):
+        # Remove any non-JSON text before the actual JSON content
+        json_string = re.sub(r'^[^\[]*', '', json_string)  # Remove everything before the first '['
+        try:
+            data = json.loads(json_string)
+            return data
+            if not isinstance(data, list):
+                raise ValueError("Parsed data is not a list")
+
+            # Initialize a list to hold the field-value pairs
+            field_value_list = []
+
+            # Iterate over each entry in the JSON list
+            for entry in data:
+                for key, value in entry.items():
+                    field_value_list.append(f'"{key}": {value}')
+
+            return field_value_list
+        except (json.JSONDecodeError, ValueError) as e:
+            print(f"Error parsing JSON: {e}")
+            return None
+
+
+    def list_toString(theList):
+        theString = ""
+        for i in theList:
+            s = str(i) +", "
+            theString = theString + s
+        return theString
+
+    def delete_files(pageTotal, output_folder):
+        for i in range(pageTotal):
+            try:
+
+                os.remove(output_folder + f"/page_{i + 1}.png")
+                print(f"File at {output_folder}/page_{i + 1}.png deleted successfully.")
+            except OSError as e:
+                print(f"Error: {output_folder}/page_{i + 1}.png - {e.strerror}")
+
+
+        
+
+    def get_images(numberOfPages, output_folder, activity_criteria_list):
+        image_list = []
+        for i in range(numberOfPages):
+            image_list.append(f"{output_folder}/page_{i + 1}.png")
+        
+        #print(image_list)
+        
+        # Create a list comprehension to generate strings containing all criteria names
+        criteria_strings = [f"-{activity_criteria.name}" for activity_criteria in activity_criteria_list]
+
+
+        
+        # Join the criteria strings together and append to the images list
+
+        images = ["Directly rate the all images as a whole from 1 - 10  base on the following Criteria and overall rating:"] + criteria_strings + ["\nThe format is JSON separate by each criteria, overall rating and no other unnecessary texts. It should start with '[' and end with ']'. Include in the JSON the overall feedback about the input."]
+        
+        for i in image_list:
+            images.append(Image.open(i))
+        
+        return images
+    
+
+
+    
     def get_permissions(self):
         if self.action in ['create', 'create_from_template', 
                            'destroy', 'add_evaluation', 'delete_evaluation',
@@ -260,7 +415,7 @@ class TeamActivitiesController(viewsets.GenericViewSet,
 
     #     except Exception as e:
     #         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
+    
     @swagger_auto_schema(
     operation_summary="Submit or unsubmit an activity",
     operation_description="POST /classes/{class_pk}/teams/{team_pk}/activities/{activity_pk}/submit",
@@ -285,7 +440,43 @@ class TeamActivitiesController(viewsets.GenericViewSet,
             activity = Activity.objects.get(classroom_id=class_pk, team_id=team_pk, pk=pk)
             activity.submission_status = not activity.submission_status
             activity.save()
+            
+            attachments = ActivityWorkAttachment.objects.filter(activity_id=activity)
+            serializer = ActivityWorkAttachmentSerializer(attachments, many=True)
+            
+            member = ClassMember.objects.get(class_id=activity.classroom_id, role=0)
+            theUser = User.objects.get(email=member.user_id)
+            # print("|||||||||||||||||||||||||||||||||||||||||")
+            # print(theUser.id)
 
+            activity_instance = Activity.objects.get(pk=pk)  # Get an activity instance
+
+            activity_criteria_related = activity_instance.activityCriteria_id.all()
+
+            activity_criteria_list = list(activity_criteria_related)
+            
+            for attachment_data in serializer.data:
+                file_attachment = attachment_data['file_attachment']
+                response_text = ActivityController.pdf_to_images(file_attachment, 'D:\\SOFTWARE ENGINEERING\\techno-systems-main\\techno-systems\\backend\\backend\\activity_work_submissions', activity_criteria_list)
+                # print(response_text)
+                data = ActivityController.parse_json_string_to_list(response_text)
+                
+                print("|||||||||||||||||||||||||||||||||||||||||")
+                for i in data:
+                    print(i)
+
+
+                #for item in data:
+                #feedback = item['Feedback']
+                new_comment = ActivityComment.objects.create(
+                    comment=data,
+                    user_id_id=theUser.id,
+                    activity_id_id=activity.id,
+                    date_created=datetime.now()
+                )
+                new_comment.save()
+                
+            
             serializer = self.get_serializer(activity)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Activity.DoesNotExist:

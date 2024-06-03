@@ -287,12 +287,12 @@ const ViewActivityTeacher = () => {
                   {/* {_comment.comment} */}
                 </div>
                 <div className="d-flex flex-row gap-3 fw-bold">
-                  <button
+                  {/* <button
                     className="nav-item nav-link text-danger d-flex align-items-center"
                     onClick={(e) => handleCommentDelete(e, _comment.id)}
                   >
                     <FiTrash />
-                  </button>
+                  </button> */}
                 </div>
               </div>
             ))

@@ -126,6 +126,8 @@ const ViewActivityStudent = () => {
   const [selectedWork, setSelectedWork] = useState(null);
   const [isEditWorkClickable, setIsEditWorkClickable] = useState(false);
 
+  
+
   // Select a work
   const handleSelectWork = (work) => {
     setSelectedWork(work);
@@ -166,12 +168,15 @@ const ViewActivityStudent = () => {
           </div>
 
           <div className="d-flex flex-row gap-3">
-            <button
-              className="btn btn-outline-secondary btn-block fw-bold bw-3 m-0 "
-              onClick={handleSubmit}
-            >
-              {submitted ? `Submit Activity` : 'Unsubmit Activity'}
-            </button>
+          {((activityData?.evaluation === 0) ||(activityData?.evaluation === null)) && (
+              <button
+                className="btn btn-outline-secondary btn-block fw-bold bw-3 m-0"
+                onClick={handleSubmit}
+              >
+                {submitted ? 'Submit Activity' : 'Unsubmit Activity'}
+              </button>
+            )
+          }
           </div>
         </div>
 
@@ -220,14 +225,14 @@ const ViewActivityStudent = () => {
                   </div>
                   {/* {_comment.comment} */}
                 </div>
-                <div className="d-flex flex-row gap-3 fw-bold">
+                {/* <div className="d-flex flex-row gap-3 fw-bold">
                   <button
                     className="nav-item nav-link text-danger d-flex align-items-center"
                     onClick={(e) => handleCommentDelete(e, _comment.id)}
                   >
                     <FiTrash />
                   </button>
-                </div>
+                </div> */}
               </div>
             ))
           ) : (
@@ -256,9 +261,12 @@ const ViewActivityStudent = () => {
         </div>
 
         <div className="d-flex flex-row gap-3">
-          <button className="btn btn-outline-secondary bw-3 mt-4" onClick={handleAddWork}>
-            Add Work
-          </button>
+          {((activityData?.evaluation === 0) || (activityData?.evaluation === null)) && (
+              <button className="btn btn-outline-secondary bw-3 mt-4" onClick={handleAddWork}>
+              Add Work
+              </button>
+          )}
+          
           {selectedWork && (
             <button
               className="btn btn-primary bw-3 mt-4"
