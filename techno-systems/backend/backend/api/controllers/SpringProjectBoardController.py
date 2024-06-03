@@ -11,6 +11,7 @@ from django.db.models import Max
 from django.conf import settings
 import os
 from openai import OpenAI
+import google.generativeai as genai
 
 
 class CreateProjectBoard(generics.CreateAPIView):
@@ -48,23 +49,27 @@ class CreateProjectBoard(generics.CreateAPIView):
             f"'feedback_technical_feasibility': ['feedback'], 'feedback_capability': ['specific feedback']. "
             f"Ensure a fair and balanced assessment for each aspect."
         )
-        client = OpenAI(api_key=os.environ.get("OPENAI_KEY", ""))
-        message = [
-            {"role": "user", "content": prompt}
-        ]
+        # client = OpenAI(api_key=os.environ.get("OPENAI_KEY", ""))
+        # message = [
+        #     {"role": "user", "content": prompt}
+        # ]
+        genai.configure(api_key="AIzaSyBWSd2wFZ5izpoWbGY_-X_nV4M3xXUSqHA")
+        model = genai.GenerativeModel('gemini-1.5-pro-latest',generation_config={"response_mime_type": "application/json"})
 
         try:
-            response = client.chat.completions.create(
-                model="gpt-3.5-turbo", messages=message, temperature=0, max_tokens=1050
-            )
+            # response = client.chat.completions.create(
+            #     model="gpt-3.5-turbo", messages=message, temperature=0, max_tokens=1050
+            # )
+            response = model.generate_content(prompt)
+
             if response:
                 try:
-                    choices = response.choices
-                    first_choice_content = response.choices[0].message.content
+                    choices = response.text
+                    # first_choice_content = response.choices[0].message.content
 
                     if choices:
-                        gpt_response = first_choice_content
-                        json_response = json.loads(gpt_response)
+                        # gpt_response = first_choice_content
+                        json_response = json.loads(response.text)
                         print(json_response)
                         novelty = json_response.get("novelty", 0)
                         technical_feasibility = json_response.get(
@@ -246,20 +251,24 @@ class UpdateBoard(generics.CreateAPIView):
                 f"'feedback_technical_feasibility': ['feedback'], 'feedback_capability': ['specific feedback']. "
                 f"Ensure a fair and balanced assessment for each aspect."
             )
-            client = OpenAI(api_key=os.environ.get("OPENAI_KEY", ""))
-            message = [
-                {"role": "user", "content": prompt}
-            ]
-            response = client.chat.completions.create(
-                model="gpt-3.5-turbo", messages=message, temperature=0, max_tokens=1050
-            )
+            genai.configure(api_key="AIzaSyBWSd2wFZ5izpoWbGY_-X_nV4M3xXUSqHA")
+            model = genai.GenerativeModel('gemini-1.5-pro-latest',generation_config={"response_mime_type": "application/json"})
+            response = model.generate_content(prompt)
+
+            # client = OpenAI(api_key=os.environ.get("OPENAI_KEY", ""))
+            # message = [
+            #     {"role": "user", "content": prompt}
+            # ]
+            # response = client.chat.completions.create(
+            #     model="gpt-3.5-turbo", messages=message, temperature=0, max_tokens=1050
+            # )
             if response:
                 try:
-                    choices = response.choices
-                    first_choice_content = response.choices[0].message.content
+                    choices = response
+                    # first_choice_content = response.choices[0].message.content
                     if choices:
-                        gpt_response = first_choice_content
-                        json_response = json.loads(gpt_response)
+                        # gpt_response = first_choice_content
+                        json_response = json.loads(response.text)
                         novelty = json_response.get("novelty", 0)
                         technical_feasibility = json_response.get(
                             "technical_feasibility", 0)
