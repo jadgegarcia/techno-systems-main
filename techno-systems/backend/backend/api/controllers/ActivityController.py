@@ -55,10 +55,16 @@ class ActivityController(viewsets.GenericViewSet,
     serializer_class = ActivitySerializer
     authentication_classes = [JWTAuthentication]
     
-    API_KEY = "AIzaSyDVpe2ReNwXgyBDO7CPRGfZpeUrxpBcMOQ"
+    API_KEY = "AIzaSyAEAM8BU-w-qzBlyRjkmTD5BIG-RnoDCjM"
     genai.configure(api_key=API_KEY)
     print(API_KEY)
     
+
+    for m in genai.list_models():
+        if 'generateContent' in m.supported_generation_methods:
+            print(m.name)
+
+
     generation_config = {
         "temperature": 1,
         "top_p": 0.95,
@@ -92,9 +98,27 @@ class ActivityController(viewsets.GenericViewSet,
         safety_settings=safety_settings,
         generation_config=generation_config,
     )
+
+    def calculate_average(self, scores, total):
+        #print(scores)
+        if not scores:
+            return 0
+        avg = 0
+        for i in scores:
+
+            avg = avg + float(i)
+        return int(avg / total)
+
+
+    def extract_scores(self, feedback_str):
+        # Use a regular expression to find all numeric scores
+        scores = re.findall(r'\d+', feedback_str)
+        # Convert the list of string scores to a list of integers
+        scores = list(map(int, scores))
+        return scores
         
     def pdf_to_images(pdf_path, output_folder, activity_criteria_list):
-        doc = fitz.open('C:\\Users\\Kyle Canonigo\\React\\final_technosystems\\techno-systems-main\\techno-systems\\backend\\backend\\' + pdf_path)
+        doc = fitz.open('D:\\SOFTWARE ENGINEERING\\techno-systems-main\\techno-systems\\backend\\backend\\' + pdf_path)
         #print(f"There are {doc.page_count} Pages")
         for i in range(doc.page_count):
             page = doc.load_page(i)
@@ -104,7 +128,7 @@ class ActivityController(viewsets.GenericViewSet,
             #print(f"Page {i + 1} converted to image: {image_path}")
         
         img_list = ActivityController.get_images(doc.page_count, output_folder, activity_criteria_list)
-        print("Image List:", img_list)
+        #print("Image List:", img_list)
         
         response = ActivityController.model.generate_content(img_list, stream=True)
         response.resolve()
@@ -176,7 +200,7 @@ class ActivityController(viewsets.GenericViewSet,
         
         # Join the criteria strings together and append to the images list
 
-        images = ["Directly rate the all images as a whole from 1 - 10  base on the following Criteria and overall rating:"] + criteria_strings + ["\nThe format is JSON separate by each criteria, overall rating and no other unnecessary texts. It should start with '[' and end with ']'. Include in the JSON the overall feedback about the input."]
+        images = ["Directly rate the all images as a whole from 1 - 10  base on the following Criteria and overall rating:"] + criteria_strings + ["\nThe format is JSON separate by each criteria, overall rating and no other unnecessary texts. It should start with '[' and end with ']'. Include in the JSON the \"Overall Feedback\" about the input. There should only be 1 object."]
         
         for i in image_list:
             images.append(Image.open(i))
@@ -236,6 +260,14 @@ class ActivityController(viewsets.GenericViewSet,
                             new_activity.team_id.add(team)
                             new_activity.activityCriteria_id.add(*activityCriteria_ids)
                             activity_instances.append(new_activity)
+
+                    template = ActivityTemplate.objects.create(
+                            course_name=activity_data.get('classroom_id').course_name,
+                            title=activity_data.get('title'),
+                            description=activity_data.get('description')
+                        )
+
+
 
                     activity_serializer = self.get_serializer(activity_instances, many=True)
                     return Response(activity_serializer.data, status=status.HTTP_201_CREATED)
@@ -441,6 +473,7 @@ class TeamActivitiesController(viewsets.GenericViewSet,
             activity.submission_status = not activity.submission_status
             activity.save()
             
+            
             attachments = ActivityWorkAttachment.objects.filter(activity_id=activity)
             serializer = ActivityWorkAttachmentSerializer(attachments, many=True)
             
@@ -457,24 +490,38 @@ class TeamActivitiesController(viewsets.GenericViewSet,
             
             for attachment_data in serializer.data:
                 file_attachment = attachment_data['file_attachment']
-                response_text = ActivityController.pdf_to_images(file_attachment, 'C:\\Users\\Kyle Canonigo\\React\\final_technosystems\\techno-systems-main\\techno-systems\\backend\\backend\\activity_work_submissions', activity_criteria_list)
-                # print(response_text)
+                response_text = ActivityController.pdf_to_images(file_attachment, 'D:\\SOFTWARE ENGINEERING\\techno-systems-main\\techno-systems\\backend\\backend\\activity_work_submissions', activity_criteria_list)
+                print(response_text)
                 data = ActivityController.parse_json_string_to_list(response_text)
+                print("||||||||||||||||||||||||||||||||||||")
+                print(data)
                 
-                print("|||||||||||||||||||||||||||||||||||||||||")
-                for i in data:
-                    print(i)
+            
+            scores =  data[0]["Overall Rating"]
+            print("THIS IS THE SCORE")
+            print(scores)
+        
+
+            activity2 = Activity.objects.get(classroom_id=class_pk, team_id=team_pk, pk=pk)
+
+            # # print("THIS IS THE SCORREEEEEEEEEEEEEE: ")
+            # # print(activity2.evaluation)
+            activity2.evaluation = int(scores)
+            activity2.save()
 
 
-                #for item in data:
-                #feedback = item['Feedback']
-                new_comment = ActivityComment.objects.create(
+
+            #for item in data:
+            #feedback = item['Feedback']
+            new_comment = ActivityComment.objects.create(
                     comment=data,
                     user_id_id=theUser.id,
                     activity_id_id=activity.id,
                     date_created=datetime.now()
                 )
-                new_comment.save()
+            print("||||||||||||||||||||||||||||")
+            print(new_comment.comment)
+            new_comment.save()
                 
             
             serializer = self.get_serializer(activity)

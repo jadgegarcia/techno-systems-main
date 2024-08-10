@@ -351,10 +351,13 @@ const ViewActivityTeacher = () => {
                 <div className="b-0 m-3">
                   <div className="d-flex flex-row gap-2">
                     <div className="fw-bold activity-primary">
-                      {_comment.user.first_name} {_comment.user.last_name}:
+                      Feedback
                     </div>
                   </div>
-                  {_comment.comment}
+
+                  {console.log("this is the feedback = " + _comment.comment.match(/'Overall Feedback': '([^']+)'/)?.[1])}
+
+                  {_comment.comment.match(/'Overall Feedback': "([^"]+)"/)?.[1]}
                 </div>
                 <div className="d-flex flex-row gap-3 fw-bold">
                   <button
@@ -377,12 +380,12 @@ const ViewActivityTeacher = () => {
             <p>No comments available</p>
           )}
         </div>
-        <button
+        {/* <button
           className="btn btn-activity-primary  bw-3"
           onClick={() => setShowCommentModal(true)}
         >
           Add Comment
-        </button>
+        </button> */}
       </div>
 
       {activityData && (

@@ -316,13 +316,13 @@ const ViewActivityStudent = () => {
                 className="d-flex flex-row justify-content-between p-3 border border-dark rounded-3 "
                 key={_comment.id}
               >
-                <div className="b-0 m-3">
+                <div className="b-0 m-6" style={{ height: '150px', color: 'black' }}>
                   <div className="d-flex flex-row gap-2">
                     <div className="fw-bold activity-primary">
                       Feedback
                     </div>
                   </div>
-                  {_comment.comment.match(/'Overall Feedback': '([^']+)'/)?.[1]}
+                  {_comment.comment.match(/'Overall Feedback':\s*"([^"]+)"/)?.[1]}
                 </div>
               </div>
             ))
