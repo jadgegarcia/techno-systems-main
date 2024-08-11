@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { IoArrowBackSharp } from 'react-icons/io5';
 import Swal from 'sweetalert2';
 import Header from '../../components/Header/Header';
@@ -8,7 +8,7 @@ import Button from '../../components/UI/Button/Button';
 import { Tiptap } from '../../components/UI/RichTextEditor/TipTap';
 import ModalCustom from '../../components/UI/Modal/Modal';
 import Loading from '../../components/UI/Loading/Loading';
-import { useBoardTemplate, useProjects } from '../../../../hooks';
+import { useActivityComments, useBoardTemplate, useProjects } from '../../../../hooks';
 import styles from './AddBoard.module.css';
 
 function AddBoard() {
@@ -18,7 +18,19 @@ function AddBoard() {
   const [template, setTemplate] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newContent, setNewContent] = useState(sessionStorage.getItem('contents'));
+  const [activityComments, setActivityComments] = useState([]);
+
   const navigate = useNavigate();
+  const location = useLocation(); // Get the location object
+  const passedText = location.state?.textToPass; // Access the passed text
+  const {comments } = useActivityComments(passedText);
+
+
+  useEffect(() => {
+    if (comments) {
+      setActivityComments(comments);
+    }
+  }, [comments]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -89,6 +101,32 @@ function AddBoard() {
           {template ? (
             <span>
               <span className={styles.title}>{template.title}</span>
+              
+              {activityComments.length > 0 && activityComments[0]?.comment && (
+                <Card style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '20px auto', // Center horizontally with auto margins
+                padding: '20px',
+                maxWidth: '80%' // Optional: Adjust the maximum width
+              }}>
+              <h4>Feedback</h4>
+              <p>
+                {(() => {
+                  const commentString = activityComments[0].comment;
+                  // Check if the commentString is valid and a string
+                  if (typeof commentString === 'string') {
+                    // Use a regular expression to extract the 'Overall Feedback'
+                    const match = commentString.match(/'Overall Feedback':\s*"([^"]+)"/);
+                    return match ? match[1] : 'No feedback available';
+                  }
+                  return 'No feedback available';
+                })()}
+              </p>
+            </Card>
+)}
               <Card className={styles.cardContainer}>
                 <div className={styles.box} />
                 <div className={styles.containerStyle}>

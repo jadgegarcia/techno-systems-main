@@ -55,7 +55,7 @@ class ActivityController(viewsets.GenericViewSet,
     serializer_class = ActivitySerializer
     authentication_classes = [JWTAuthentication]
     
-    API_KEY = "AIzaSyAEAM8BU-w-qzBlyRjkmTD5BIG-RnoDCjM"
+    API_KEY = "AIzaSyC3Zs-NV83dd6p9WgAIeT4iwYZOWHpsihw"
     genai.configure(api_key=API_KEY)
     print(API_KEY)
     
@@ -118,7 +118,7 @@ class ActivityController(viewsets.GenericViewSet,
         return scores
         
     def pdf_to_images(pdf_path, output_folder, activity_criteria_list):
-        doc = fitz.open('D:\\SOFTWARE ENGINEERING\\techno-systems-main\\techno-systems\\backend\\backend\\' + pdf_path)
+        doc = fitz.open('C:\\Users\\Noel Alemaña\\techno\\techno-systems-main\\techno-systems\\backend\\backend\\' + pdf_path)
         #print(f"There are {doc.page_count} Pages")
         for i in range(doc.page_count):
             page = doc.load_page(i)
@@ -490,7 +490,7 @@ class TeamActivitiesController(viewsets.GenericViewSet,
             
             for attachment_data in serializer.data:
                 file_attachment = attachment_data['file_attachment']
-                response_text = ActivityController.pdf_to_images(file_attachment, 'D:\\SOFTWARE ENGINEERING\\techno-systems-main\\techno-systems\\backend\\backend\\activity_work_submissions', activity_criteria_list)
+                response_text = ActivityController.pdf_to_images(file_attachment, 'C:\\Users\\Noel Alemaña\\techno\\techno-systems-main\\techno-systems\\backend\\backend\\activity_work_submissions', activity_criteria_list)
                 print(response_text)
                 data = ActivityController.parse_json_string_to_list(response_text)
                 print("||||||||||||||||||||||||||||||||||||")
