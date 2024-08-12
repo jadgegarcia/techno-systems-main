@@ -53,7 +53,7 @@ class CreateProjectBoard(generics.CreateAPIView):
         # message = [
         #     {"role": "user", "content": prompt}
         # ]
-        genai.configure(api_key="AIzaSyBWSd2wFZ5izpoWbGY_-X_nV4M3xXUSqHA")
+        genai.configure(api_key="AIzaSyC3Zs-NV83dd6p9WgAIeT4iwYZOWHpsihw")
         model = genai.GenerativeModel('gemini-1.5-pro-latest',generation_config={"response_mime_type": "application/json"})
 
         try:
@@ -251,7 +251,7 @@ class UpdateBoard(generics.CreateAPIView):
                 f"'feedback_technical_feasibility': ['feedback'], 'feedback_capability': ['specific feedback']. "
                 f"Ensure a fair and balanced assessment for each aspect."
             )
-            genai.configure(api_key="AIzaSyBWSd2wFZ5izpoWbGY_-X_nV4M3xXUSqHA")
+            genai.configure(api_key="AIzaSyC3Zs-NV83dd6p9WgAIeT4iwYZOWHpsihw")
             model = genai.GenerativeModel('gemini-1.5-pro-latest',generation_config={"response_mime_type": "application/json"})
             response = model.generate_content(prompt)
 
