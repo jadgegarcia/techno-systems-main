@@ -57,7 +57,7 @@ class ActivityController(viewsets.GenericViewSet,
     serializer_class = ActivitySerializer
     authentication_classes = [JWTAuthentication]
     
-    API_KEY = "AIzaSyC3Zs-NV83dd6p9WgAIeT4iwYZOWHpsihw"
+    API_KEY = "AIzaSyCN0cmESuQIO_WA6pFeYkGlE0veJVhCW94"
     genai.configure(api_key=API_KEY)
     print(API_KEY)
     
