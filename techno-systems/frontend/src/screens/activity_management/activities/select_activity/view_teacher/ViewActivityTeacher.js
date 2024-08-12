@@ -74,7 +74,11 @@ const ViewActivityTeacher = () => {
     if (activityData && comments) {
       setActivityComments(comments);
     }
+
+
   }, [activityData, comments]);
+
+  
 
   const handleDeleteEvaluation = async (e) => {
     e.preventDefault();
@@ -250,6 +254,10 @@ const ViewActivityTeacher = () => {
                 <p>Due: {getFormattedDate()}</p>
                 <p>Description:</p>
                 <div
+                  style={{
+                    textAlign: 'justify',
+                    textJustify: 'inter-word',
+                  }}
                   dangerouslySetInnerHTML={{
                     __html: activityData?.description.replace(/\n/g, '<br>'),
                   }}
@@ -357,7 +365,7 @@ const ViewActivityTeacher = () => {
 
                   {console.log("this is the feedback = " + _comment.comment.match(/'Overall Feedback': '([^']+)'/)?.[1])}
 
-                  {_comment.comment.match(/'Overall Feedback': "([^"]+)"/)?.[1]}
+                  {_comment.comment.match(/'Overall Feedback': '([^']+)'/)?.[1]}
                 </div>
                 <div className="d-flex flex-row gap-3 fw-bold">
                   <button

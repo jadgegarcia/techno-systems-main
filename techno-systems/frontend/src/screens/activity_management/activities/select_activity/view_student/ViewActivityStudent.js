@@ -31,6 +31,8 @@ const ViewActivityStudent = () => {
     const { getActivityCriteriaById } = useActivityCriteria(activityId);
     const [activityCriteriaNames, setActivityCriteriaNames] = useState([]);
   // -------------------- END CRITERIA ------------------------------
+  const [commentsLoaded, setCommentsLoaded] = useState(false);
+  const [loading, setLoading] = useState(true); // Control the loading state
 
   console.log("HEREEEEE:");
 
@@ -86,6 +88,8 @@ const ViewActivityStudent = () => {
     }
   }, [activityData, comments]);
 
+  
+  
   const getFormattedDate = () => {
     if (activityData?.due_date) {
       const options = {
@@ -103,13 +107,28 @@ const ViewActivityStudent = () => {
   const submitAct = useActivity(classId, teamId, activityId);
 
   const handleSubmit = async (e) => {
+    e.preventDefault(); // Prevent default form submission behavior if needed
     setSubmitted(true);
     const data = {
       submission_status: submitted,
     };
-    submitAct.submitActivity(classId, teamId, activityId, data);
-    window.location.reload();
+  
+    try {
+      await submitAct.submitActivity(classId, teamId, activityId, data);
+  
+      // Wait for the activityComments to update (if they are supposed to be updated)
+      // Adding a short delay before checking commentsLoaded
+      setTimeout(() => {
+        // Reload the page after a 15-second delay
+        window.location.reload();
+      }, 5000); // 15 seconds delay
+  
+    } catch (error) {
+      console.error('Error submitting activity:', error);
+      // Handle the error appropriately here
+    }
   };
+  
 
   // Edit/Delete Work
 
@@ -206,6 +225,10 @@ const ViewActivityStudent = () => {
                 <p>Due: {getFormattedDate()}</p>
                 <p>Description:</p>
                 <div
+                  style={{
+                    textAlign: 'justify',
+                    textJustify: 'inter-word',
+                  }}
                   dangerouslySetInnerHTML={{
                     __html: activityData?.description.replace(/\n/g, '<br>'),
                   }}
@@ -308,7 +331,7 @@ const ViewActivityStudent = () => {
         <hr className="text-dark" />
 
         <div className="d-flex flex-column gap-3">
-          <p>Comment</p>
+          {/* <p>Comment</p> */}
 
           {activityComments && activityComments.length > 0 ? (
             activityComments.map((_comment) => (
@@ -322,7 +345,7 @@ const ViewActivityStudent = () => {
                       Feedback
                     </div>
                   </div>
-                  {_comment.comment.match(/'Overall Feedback':\s*"([^"]+)"/)?.[1]}
+                  {_comment.comment.match(/'Overall Feedback':\s*'([^']+)'/)?.[1]}
                 </div>
               </div>
             ))

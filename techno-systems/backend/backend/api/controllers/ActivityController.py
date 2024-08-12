@@ -1,3 +1,5 @@
+import time
+from django.http import HttpResponseRedirect
 from rest_framework import viewsets, mixins, permissions, status
 from rest_framework.decorators import action
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -55,7 +57,7 @@ class ActivityController(viewsets.GenericViewSet,
     serializer_class = ActivitySerializer
     authentication_classes = [JWTAuthentication]
     
-    API_KEY = "AIzaSyAEAM8BU-w-qzBlyRjkmTD5BIG-RnoDCjM"
+    API_KEY = "AIzaSyCN0cmESuQIO_WA6pFeYkGlE0veJVhCW94"
     genai.configure(api_key=API_KEY)
     print(API_KEY)
     
@@ -99,6 +101,10 @@ class ActivityController(viewsets.GenericViewSet,
         generation_config=generation_config,
     )
 
+    def refresher(request):
+        return HttpResponseRedirect(request.path)
+
+
     def calculate_average(self, scores, total):
         #print(scores)
         if not scores:
@@ -117,7 +123,7 @@ class ActivityController(viewsets.GenericViewSet,
         scores = list(map(int, scores))
         return scores
         
-    def pdf_to_images(pdf_path, output_folder, activity_criteria_list):
+    def pdf_to_images(pdf_path, output_folder, activity_criteria_list, activity_instance):
         doc = fitz.open('D:\\SOFTWARE ENGINEERING\\techno-systems-main\\techno-systems\\backend\\backend\\' + pdf_path)
         #print(f"There are {doc.page_count} Pages")
         for i in range(doc.page_count):
@@ -127,7 +133,7 @@ class ActivityController(viewsets.GenericViewSet,
             pix.save(image_path)
             #print(f"Page {i + 1} converted to image: {image_path}")
         
-        img_list = ActivityController.get_images(doc.page_count, output_folder, activity_criteria_list)
+        img_list = ActivityController.get_images(doc.page_count, output_folder, activity_criteria_list, activity_instance)
         #print("Image List:", img_list)
         
         response = ActivityController.model.generate_content(img_list, stream=True)
@@ -186,7 +192,7 @@ class ActivityController(viewsets.GenericViewSet,
 
         
 
-    def get_images(numberOfPages, output_folder, activity_criteria_list):
+    def get_images(numberOfPages, output_folder, activity_criteria_list, activity_instance):
         image_list = []
         for i in range(numberOfPages):
             image_list.append(f"{output_folder}/page_{i + 1}.png")
@@ -200,7 +206,7 @@ class ActivityController(viewsets.GenericViewSet,
         
         # Join the criteria strings together and append to the images list
 
-        images = ["Directly rate the all images as a whole from 1 - 10  base on the following Criteria and overall rating:"] + criteria_strings + ["\nThe format is JSON separate by each criteria, overall rating and no other unnecessary texts. It should start with '[' and end with ']'. Include in the JSON the \"Overall Feedback\" about the input. There should only be 1 object."]
+        images = [ "Activity Title: " + activity_instance.title + "\nDescription: " + activity_instance.description + "\n" + "Directly rate all images as a whole from 1 - 10  base on the following Criteria and overall rating:"] + criteria_strings + ["\nThe format is JSON separate by each criteria, overall rating and no other unnecessary texts. It should start with '[' and end with ']'. Include in the JSON the \"Overall Feedback\" about the input and enclose the value with single quotes. There should only be 1 object."]
         
         for i in image_list:
             images.append(Image.open(i))
@@ -323,6 +329,7 @@ class ActivityController(viewsets.GenericViewSet,
         total_score = request.data.get('total_score', None)
 
         if template_id is not None and class_pk is not None:
+            activityCriteria_ids = request.data.get('activityCriteria_id', [])
             try:
                 class_obj = ClassRoom.objects.get(pk=class_pk)
                 template = ActivityTemplate.objects.get(pk=template_id)
@@ -345,7 +352,8 @@ class ActivityController(viewsets.GenericViewSet,
                             # Set the class and team for the new activity
                             new_activity.classroom_id = class_obj
                             new_activity.team_id.add(team)
-
+                            new_activity.team_id.add(team)
+                            new_activity.activityCriteria_id.add(*activityCriteria_ids)
                             new_activity.save()
                             activity_instances.append(new_activity)
                         except Team.DoesNotExist:
@@ -490,7 +498,7 @@ class TeamActivitiesController(viewsets.GenericViewSet,
             
             for attachment_data in serializer.data:
                 file_attachment = attachment_data['file_attachment']
-                response_text = ActivityController.pdf_to_images(file_attachment, 'D:\\SOFTWARE ENGINEERING\\techno-systems-main\\techno-systems\\backend\\backend\\activity_work_submissions', activity_criteria_list)
+                response_text = ActivityController.pdf_to_images(file_attachment, 'D:\\SOFTWARE ENGINEERING\\techno-systems-main\\techno-systems\\backend\\backend\\activity_work_submissions', activity_criteria_list, activity_instance)
                 print(response_text)
                 data = ActivityController.parse_json_string_to_list(response_text)
                 print("||||||||||||||||||||||||||||||||||||")
